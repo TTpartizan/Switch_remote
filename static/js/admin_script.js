@@ -12,83 +12,6 @@ function safeGetElement(selector, context = document) {
     return element;
 }
 
-// Функция для создания модального окна
-function createModal(modalSelector, createFunction, updateFunction, loadFunction) {
-    const modal = safeGetElement(modalSelector);
-    if (!modal) return;
-
-    const addButton = safeGetElement('[id$="Btn"]', modal);
-    const form = safeGetElement('form', modal);
-
-    if (!addButton || !form) return;
-
-    addButton.addEventListener('click', () => {
-        // Сбрасываем все поля ввода внутри формы
-        form.querySelectorAll('input').forEach(input => {
-            if (input.type === 'checkbox') {
-                input.checked = false;
-            } else if (input.type === 'hidden') {
-                input.value = '';
-            } else {
-                input.value = input.dataset.default || '';
-            }
-        });
-
-        // Специфичные действия для команд (очистка переменных)
-        if (modalSelector === '#commandModal') {
-            const variablesContainer = safeGetElement('#variablesContainer');
-            if (variablesContainer) variablesContainer.innerHTML = '';
-        }
-
-        new bootstrap.Modal(modal).show();
-    });
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const idInput = safeGetElement('[id$="IdEdit"]', form);
-        const id = idInput ? idInput.value : null;
-
-        // Собираем данные из формы
-        const formData = {};
-        form.querySelectorAll('input:not([type="submit"])').forEach(input => {
-            if (input.type === 'checkbox') {
-                formData[input.id.replace('Input', '')] = input.checked;
-            } else if (input.value) {
-                formData[input.id.replace('Input', '')] = input.value;
-            }
-        });
-
-        // Специфичные действия для команд (сбор переменных)
-        if (modalSelector === '#commandModal') {
-            const variables = {};
-            document.querySelectorAll('#variablesContainer .input-group').forEach(group => {
-                const nameInput = group.querySelector('.variable-name');
-                const valueInput = group.querySelector('.variable-value');
-                
-                if (nameInput.value && valueInput.value) {
-                    variables[nameInput.value] = valueInput.value;
-                }
-            });
-            formData.variables = Object.keys(variables).length ? variables : null;
-        }
-
-        try {
-            if (id) {
-                await updateFunction(id, formData);
-            } else {
-                await createFunction(formData);
-            }
-
-            bootstrap.Modal.getInstance(modal).hide();
-            loadFunction();
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert(`Ошибка: ${error.message}`);
-        }
-    });
-}
-
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, навешиваем обработчики');
@@ -101,10 +24,66 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSwitches();
         loadCommands();
 
-        // Создание модальных окон с обновленной логикой
-        createModal('#userEditModal', createUser, updateUser, loadUsers);
-        createModal('#switchEditModal', createSwitch, updateSwitch, loadSwitches);
-        createModal('#commandEditModal', createCommand, updateCommand, loadCommands);
+        // Обработчики кнопок добавления с расширенной диагностикой
+        const addButtons = [
+            { 
+                selector: '[id$="UserBtn"]', 
+                modalSelector: '#userEditModal',
+                resetFields: (form) => {
+                    form.querySelector('#userIdEdit').value = '';
+                    form.querySelector('#usernameInput').value = '';
+                    form.querySelector('#passwordInput').value = '';
+                    form.querySelector('#isAdminCheck').checked = false;
+                }
+            },
+            { 
+                selector: '[id$="SwitchBtn"]', 
+                modalSelector: '#switchEditModal',
+                resetFields: (form) => {
+                    form.querySelector('#switchIdEdit').value = '';
+                    form.querySelector('#switchIpInput').value = '';
+                    form.querySelector('#switchHostnameInput').value = '';
+                    form.querySelector('#switchBrandInput').value = 'cisco_ios';
+                }
+            },
+            { 
+                selector: '[id$="CommandBtn"]', 
+                modalSelector: '#commandEditModal',
+                resetFields: (form) => {
+                    form.querySelector('#commandIdEdit').value = '';
+                    form.querySelector('#commandNameInput').value = '';
+                    form.querySelector('#commandTemplateInput').value = '';
+                    
+                    // Очистка переменных для команд
+                    const variablesContainer = form.querySelector('#variablesContainer');
+                    if (variablesContainer) variablesContainer.innerHTML = '';
+                }
+            }
+        ];
+
+        // Навешиваем обработчики на кнопки добавления
+        addButtons.forEach(config => {
+            const buttons = document.querySelectorAll(config.selector);
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    console.log(`Нажата кнопка: ${button.id}`);
+                    
+                    const modal = safeGetElement(config.modalSelector);
+                    const form = modal ? modal.querySelector('form') : null;
+                    
+                    if (modal && form) {
+                        // Сброс полей
+                        config.resetFields(form);
+                        
+                        // Показываем модальное окно
+                        new bootstrap.Modal(modal).show();
+                    } else {
+                        console.error(`Не найдена форма или модальное окно для ${config.selector}`);
+                    }
+                });
+            });
+        });
 
         // Обработчик добавления переменной для команд
         const addVariableBtn = safeGetElement('#addVariableBtn');
