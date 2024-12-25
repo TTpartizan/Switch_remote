@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 
 from dependencies.db import get_db
 from dependencies.auth import check_admin_permission, get_current_active_user
@@ -11,12 +11,19 @@ from services.network_service import NetworkService
 
 import database
 import schemas
-import network_utils
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
 # Пользователи
-@admin_router.post("/users/", response_model=schemas.UserCreate)
+@admin_router.get("/users/", response_model=List[Dict])
+def list_users(
+    current_user: database.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    check_admin_permission(current_user)
+    return UserService(db).list_users()
+
+@admin_router.post("/users/", response_model=Dict)
 def create_user(
     user: schemas.UserCreate, 
     current_user: database.User = Depends(get_current_active_user),
@@ -25,15 +32,7 @@ def create_user(
     check_admin_permission(current_user)
     return UserService(db).create_user(user)
 
-@admin_router.get("/users/", response_model=List[schemas.UserCreate])
-def list_users(
-    current_user: database.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    check_admin_permission(current_user)
-    return UserService(db).list_users()
-
-@admin_router.put("/users/{user_id}", response_model=schemas.UserUpdate)
+@admin_router.put("/users/{user_id}", response_model=Dict)
 def update_user(
     user_id: int, 
     user: schemas.UserUpdate,
@@ -53,7 +52,15 @@ def delete_user(
     return UserService(db).delete_user(user_id)
 
 # Коммутаторы
-@admin_router.post("/switches/", response_model=schemas.SwitchCreate)
+@admin_router.get("/switches/", response_model=List[Dict])
+def list_switches(
+    current_user: database.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    check_admin_permission(current_user)
+    return SwitchService(db).list_switches()
+
+@admin_router.post("/switches/", response_model=Dict)
 def create_switch(
     switch: schemas.SwitchCreate,
     current_user: database.User = Depends(get_current_active_user),
@@ -62,15 +69,7 @@ def create_switch(
     check_admin_permission(current_user)
     return SwitchService(db).create_switch(switch)
 
-@admin_router.get("/switches/", response_model=List[schemas.SwitchCreate])
-def list_switches(
-    current_user: database.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    check_admin_permission(current_user)
-    return SwitchService(db).list_switches()
-
-@admin_router.put("/switches/{switch_id}", response_model=schemas.SwitchUpdate)
+@admin_router.put("/switches/{switch_id}", response_model=Dict)
 def update_switch(
     switch_id: int, 
     switch: schemas.SwitchUpdate,
@@ -90,7 +89,15 @@ def delete_switch(
     return SwitchService(db).delete_switch(switch_id)
 
 # Команды
-@admin_router.post("/commands/", response_model=schemas.CommandCreate)
+@admin_router.get("/commands/", response_model=List[Dict])
+def list_commands(
+    current_user: database.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    check_admin_permission(current_user)
+    return CommandService(db).list_commands()
+
+@admin_router.post("/commands/", response_model=Dict)
 def create_command(
     command: schemas.CommandCreate,
     current_user: database.User = Depends(get_current_active_user),
@@ -99,15 +106,7 @@ def create_command(
     check_admin_permission(current_user)
     return CommandService(db).create_command(command)
 
-@admin_router.get("/commands/", response_model=List[schemas.CommandCreate])
-def list_commands(
-    current_user: database.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    check_admin_permission(current_user)
-    return CommandService(db).list_commands()
-
-@admin_router.put("/commands/{command_id}", response_model=schemas.CommandUpdate)
+@admin_router.put("/commands/{command_id}", response_model=Dict)
 def update_command(
     command_id: int, 
     command: schemas.CommandUpdate,

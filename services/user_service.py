@@ -25,10 +25,21 @@ class UserService:
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)
-        return user
+        return {
+            "id": db_user.id,
+            "username": db_user.username, 
+            "is_admin": db_user.is_admin
+        }
 
     def list_users(self):
-        return self.db.query(database.User).all()
+        users = self.db.query(database.User).all()
+        return [
+            {
+                "id": user.id,
+                "username": user.username, 
+                "is_admin": user.is_admin
+            } for user in users
+        ]
 
     def update_user(self, user_id: int, user: schemas.UserUpdate):
         db_user = self.db.query(database.User).filter(database.User.id == user_id).first()
@@ -47,7 +58,11 @@ class UserService:
         
         self.db.commit()
         self.db.refresh(db_user)
-        return user
+        return {
+            "id": db_user.id,
+            "username": db_user.username, 
+            "is_admin": db_user.is_admin
+        }
 
     def delete_user(self, user_id: int):
         db_user = self.db.query(database.User).filter(database.User.id == user_id).first()
