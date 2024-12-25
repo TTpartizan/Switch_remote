@@ -47,7 +47,9 @@ def init_database():
                 brand="SNR"
             )
         ]
-        db.extend(switches)
+        
+        # Используем db.add_all() вместо extend
+        db.add_all(switches)
 
         # Добавляем тестовые команды
         commands = [
@@ -60,7 +62,9 @@ def init_database():
                 template="virtual-cable-test interface ethernet 1/0/х"
             )
         ]
-        db.extend(commands)
+        
+        # Используем db.add_all() вместо extend
+        db.add_all(commands)
 
         # Сохраняем изменения
         db.commit()
