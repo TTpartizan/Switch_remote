@@ -22,9 +22,9 @@ async function fetchWithAuth(url, options = {}) {
         console.log('Ответ:', response);
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.text();
             console.error('Ошибка:', errorData);
-            throw new Error(errorData.detail || 'Произошла ошибка');
+            throw new Error(errorData || 'Произошла ошибка');
         }
 
         return response.json();
@@ -34,23 +34,140 @@ async function fetchWithAuth(url, options = {}) {
     }
 }
 
-// Добавляем обработчики событий сразу при загрузке
+// Пользователи
+async function loadUsers() {
+    try {
+        const users = await fetchWithAuth('/admin/users/');
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            const row = `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.is_admin ? 'Администратор' : 'Пользователь'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-user" data-id="${user.id}">Изменить</button>
+                        <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">Удалить</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error);
+        alert(error.message);
+    }
+}
+
+// Коммутаторы
+async function loadSwitches() {
+    try {
+        const switches = await fetchWithAuth('/admin/switches/');
+        const tbody = document.getElementById('switchesTableBody');
+        tbody.innerHTML = '';
+        switches.forEach(sw => {
+            const row = `
+                <tr>
+                    <td>${sw.id}</td>
+                    <td>${sw.ip_address}</td>
+                    <td>${sw.hostname}</td>
+                    <td>${sw.brand}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-switch" data-id="${sw.id}">Изменить</button>
+                        <button class="btn btn-sm btn-danger delete-switch" data-id="${sw.id}">Удалить</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки коммутаторов:', error);
+        alert(error.message);
+    }
+}
+
+// Команды
+async function loadCommands() {
+    try {
+        const commands = await fetchWithAuth('/admin/commands/');
+        const tbody = document.getElementById('commandsTableBody');
+        tbody.innerHTML = '';
+        commands.forEach(cmd => {
+            const row = `
+                <tr>
+                    <td>${cmd.id}</td>
+                    <td>${cmd.name}</td>
+                    <td>${cmd.template}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-command" data-id="${cmd.id}">Изменить</button>
+                        <button class="btn btn-sm btn-danger delete-command" data-id="${cmd.id}">Удалить</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки команд:', error);
+        alert(error.message);
+    }
+}
+
+// Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, навешиваем обработчики');
 
-    // Пользователи
+    // Обработчики для кнопок добавления
+    const addUserBtn = document.getElementById('addUserBtn');
+    const addSwitchBtn = document.getElementById('addSwitchBtn');
+    const addCommandBtn = document.getElementById('addCommandBtn');
+
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', () => {
+            console.log('Нажата кнопка добавления пользователя');
+            document.getElementById('userIdEdit').value = '';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('isAdminCheck').checked = false;
+            new bootstrap.Modal(document.getElementById('userEditModal')).show();
+        });
+    }
+
+    if (addSwitchBtn) {
+        addSwitchBtn.addEventListener('click', () => {
+            console.log('Нажата кнопка добавления коммутатора');
+            document.getElementById('switchIdEdit').value = '';
+            document.getElementById('switchIpInput').value = '';
+            document.getElementById('switchHostnameInput').value = '';
+            document.getElementById('switchBrandInput').value = 'cisco_ios';
+            new bootstrap.Modal(document.getElementById('switchEditModal')).show();
+        });
+    }
+
+    if (addCommandBtn) {
+        addCommandBtn.addEventListener('click', () => {
+            console.log('Нажата кнопка добавления команды');
+            document.getElementById('commandIdEdit').value = '';
+            document.getElementById('commandNameInput').value = '';
+            document.getElementById('commandTemplateInput').value = '';
+            new bootstrap.Modal(document.getElementById('commandEditModal')).show();
+        });
+    }
+
+    // Обработчики форм
     const userForm = document.getElementById('userForm');
+    const switchForm = document.getElementById('switchForm');
+    const commandForm = document.getElementById('commandForm');
+
     if (userForm) {
         userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Форма пользователя - submit');
+            console.log('Отправка формы пользователя');
             
             const userId = document.getElementById('userIdEdit').value;
             const username = document.getElementById('usernameInput').value;
             const password = document.getElementById('passwordInput').value;
             const isAdmin = document.getElementById('isAdminCheck').checked;
-
-            console.log('Данные пользователя:', { userId, username, password, isAdmin });
 
             try {
                 const userData = { username, password, is_admin: isAdmin };
@@ -74,23 +191,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Ошибка: ${error.message}`);
             }
         });
-    } else {
-        console.error('Форма пользователя не найдена');
     }
 
-    // Коммутаторы
-    const switchForm = document.getElementById('switchForm');
     if (switchForm) {
         switchForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Форма коммутатора - submit');
+            console.log('Отправка формы коммутатора');
             
             const switchId = document.getElementById('switchIdEdit').value;
             const ipAddress = document.getElementById('switchIpInput').value;
             const hostname = document.getElementById('switchHostnameInput').value;
             const brand = document.getElementById('switchBrandInput').value;
-
-            console.log('Данные коммутатора:', { switchId, ipAddress, hostname, brand });
 
             try {
                 const switchData = { 
@@ -118,22 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Ошибка: ${error.message}`);
             }
         });
-    } else {
-        console.error('Форма коммутатора не найдена');
     }
 
-    // Команды
-    const commandForm = document.getElementById('commandForm');
     if (commandForm) {
         commandForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Форма команды - submit');
+            console.log('Отправка формы команды');
             
             const commandId = document.getElementById('commandIdEdit').value;
             const name = document.getElementById('commandNameInput').value;
             const template = document.getElementById('commandTemplateInput').value;
-
-            console.log('Данные команды:', { commandId, name, template });
 
             try {
                 const commandData = { name, template };
@@ -157,8 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Ошибка: ${error.message}`);
             }
         });
-    } else {
-        console.error('Форма команды не найдена');
     }
 
     // Загрузка данных при открытии модальных окон
@@ -170,8 +273,3 @@ document.addEventListener('DOMContentLoaded', () => {
     if (switchModal) switchModal.addEventListener('show.bs.modal', loadSwitches);
     if (commandModal) commandModal.addEventListener('show.bs.modal', loadCommands);
 });
-
-// Функции загрузки данных (остаются прежними)
-async function loadUsers() { /* ... */ }
-async function loadSwitches() { /* ... */ }
-async function loadCommands() { /* ... */ }
