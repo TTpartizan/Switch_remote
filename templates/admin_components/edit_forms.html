@@ -1,0 +1,87 @@
+<div id="modalForms">
+    <!-- Форма пользователя -->
+    <div class="modal fade" id="userEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalTitle">Добавить/Редактировать пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="userIdEdit">
+                        <div class="mb-3">
+                            <label>Имя пользователя</label>
+                            <input type="text" class="form-control" id="usernameInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Пароль</label>
+                            <input type="password" class="form-control" id="passwordInput">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="isAdminCheck">
+                            <label class="form-check-label">Администратор</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма коммутатора -->
+    <div class="modal fade" id="switchEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="switchModalTitle">Добавить/Редактировать коммутатор</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="switchForm">
+                        <input type="hidden" id="switchIdEdit">
+                        <div class="mb-3">
+                            <label>IP-адрес</label>
+                            <input type="text" class="form-control" id="switchIpInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Имя</label>
+                            <input type="text" class="form-control" id="switchHostnameInput">
+                        </div>
+                        <div class="mb-3">
+                            <label>Бренд</label>
+                            <input type="text" class="form-control" id="switchBrandInput" value="cisco_ios">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма команды -->
+    <div class="modal fade" id="commandEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="commandModalTitle">Добавить/Редактировать команду</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="commandForm">
+                        <input type="hidden" id="commandIdEdit">
+                        <div class="mb-3">
+                            <label>Название</label>
+                            <input type="text" class="form-control" id="commandNameInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Шаблон команды</label>
+                            <input type="text" class="form-control" id="commandTemplateInput" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

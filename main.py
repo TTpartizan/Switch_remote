@@ -32,6 +32,20 @@ def get_current_user_or_none(request: Request):
 def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page(request: Request):
+    user = get_current_user_or_none(request)
+    if not user or not user.is_admin:
+        return RedirectResponse(url="/login")
+    
+    return templates.TemplateResponse(
+        "admin.html", 
+        {
+            "request": request, 
+            "username": user.username
+        }
+    )
+
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
     user = get_current_user_or_none(request)
