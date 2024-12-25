@@ -101,33 +101,109 @@ async function loadCommands() {
     }
 }
 
+// Создание пользователя
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId = document.getElementById('userIdEdit').value;
+    const username = document.getElementById('usernameInput').value;
+    const password = document.getElementById('passwordInput').value;
+    const isAdmin = document.getElementById('isAdminCheck').checked;
+
+    try {
+        const userData = { username, password, is_admin: isAdmin };
+        
+        if (userId) {
+            // Обновление существующего пользователя
+            await fetchWithAuth(`/admin/users/${userId}`, {
+                method: 'PUT',
+                body: JSON.stringify(userData)
+            });
+        } else {
+            // Создание нового пользователя
+            await fetchWithAuth('/admin/users/', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+        }
+
+        // Закрываем модальное окно и обновляем список
+        bootstrap.Modal.getInstance(document.getElementById('userEditModal')).hide();
+        loadUsers();
+    } catch (error) {
+        alert(error.message);
+    }
+});
+
+// Создание коммутатора
+document.getElementById('switchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const switchId = document.getElementById('switchIdEdit').value;
+    const ipAddress = document.getElementById('switchIpInput').value;
+    const hostname = document.getElementById('switchHostnameInput').value;
+    const brand = document.getElementById('switchBrandInput').value;
+
+    try {
+        const switchData = { 
+            ip_address: ipAddress, 
+            hostname: hostname, 
+            brand: brand 
+        };
+        
+        if (switchId) {
+            // Обновление существующего коммутатора
+            await fetchWithAuth(`/admin/switches/${switchId}`, {
+                method: 'PUT',
+                body: JSON.stringify(switchData)
+            });
+        } else {
+            // Создание нового коммутатора
+            await fetchWithAuth('/admin/switches/', {
+                method: 'POST',
+                body: JSON.stringify(switchData)
+            });
+        }
+
+        // Закрываем модальное окно и обновляем список
+        bootstrap.Modal.getInstance(document.getElementById('switchEditModal')).hide();
+        loadSwitches();
+    } catch (error) {
+        alert(error.message);
+    }
+});
+
+// Создание команды
+document.getElementById('commandForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const commandId = document.getElementById('commandIdEdit').value;
+    const name = document.getElementById('commandNameInput').value;
+    const template = document.getElementById('commandTemplateInput').value;
+
+    try {
+        const commandData = { name, template };
+        
+        if (commandId) {
+            // Обновление существующей команды
+            await fetchWithAuth(`/admin/commands/${commandId}`, {
+                method: 'PUT',
+                body: JSON.stringify(commandData)
+            });
+        } else {
+            // Создание новой команды
+            await fetchWithAuth('/admin/commands/', {
+                method: 'POST',
+                body: JSON.stringify(commandData)
+            });
+        }
+
+        // Закрываем модальное окно и обновляем список
+        bootstrap.Modal.getInstance(document.getElementById('commandEditModal')).hide();
+        loadCommands();
+    } catch (error) {
+        alert(error.message);
+    }
+});
+
 // Загрузка данных при открытии модальных окон
 document.getElementById('userModal').addEventListener('show.bs.modal', loadUsers);
 document.getElementById('switchModal').addEventListener('show.bs.modal', loadSwitches);
 document.getElementById('commandModal').addEventListener('show.bs.modal', loadCommands);
-
-// Обработчики для добавления сущностей
-document.getElementById('addUserBtn').addEventListener('click', () => {
-    document.getElementById('userIdEdit').value = '';
-    document.getElementById('usernameInput').value = '';
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('isAdminCheck').checked = false;
-    new bootstrap.Modal(document.getElementById('userEditModal')).show();
-});
-
-document.getElementById('addSwitchBtn').addEventListener('click', () => {
-    document.getElementById('switchIdEdit').value = '';
-    document.getElementById('switchIpInput').value = '';
-    document.getElementById('switchHostnameInput').value = '';
-    document.getElementById('switchBrandInput').value = 'cisco_ios';
-    new bootstrap.Modal(document.getElementById('switchEditModal')).show();
-});
-
-document.getElementById('addCommandBtn').addEventListener('click', () => {
-    document.getElementById('commandIdEdit').value = '';
-    document.getElementById('commandNameInput').value = '';
-    document.getElementById('commandTemplateInput').value = '';
-    new bootstrap.Modal(document.getElementById('commandEditModal')).show();
-});
-
-// Остальной функционал (редактирование, удаление) будет добавлен позже
