@@ -3,36 +3,63 @@ import { loadSwitches, createSwitch, updateSwitch } from './services/switches.js
 import { loadCommands, createCommand, updateCommand } from './services/commands.js';
 import { getToken } from './utils/auth.js';
 
-// Функция для безопасного получения элемента
-function safeGetElement(selector, context = document) {
-    const element = context.querySelector(selector);
-    if (!element) {
-        console.warn(`Элемент с селектором ${selector} не найден`);
-    }
-    return element;
-}
-
-// Функция для сбора данных из формы
+// Функция для сбора данных из формы с маппингом ключей
 function collectFormData(form) {
-    const formData = {};
+    const rawData = {};
     
     // Собираем все input элементы
     form.querySelectorAll('input').forEach(input => {
         if (input.type === 'hidden') {
-            formData[input.id.replace('Edit', '')] = input.value;
+            rawData[input.id.replace('Edit', '')] = input.value;
         } else if (input.type === 'text') {
-            formData[input.id.replace('Input', '')] = input.value;
+            rawData[input.id.replace('Input', '')] = input.value;
         } else if (input.type === 'password') {
             if (input.value) {
-                formData[input.id.replace('Input', '')] = input.value;
+                rawData[input.id.replace('Input', '')] = input.value;
             }
         } else if (input.type === 'checkbox') {
-            formData[input.id.replace('Check', '')] = input.checked;
+            rawData[input.id.replace('Check', '')] = input.checked;
         }
     });
 
+    // Маппинг ключей для разных форм
+    const keyMappings = {
+        'switch': {
+            'switchId': 'id',
+            'switchIp': 'ip_address',
+            'switchHostname': 'hostname',
+            'switchBrand': 'brand'
+        },
+        'user': {
+            'userId': 'id',
+            'username': 'username',
+            'password': 'password',
+            'isAdmin': 'is_admin'
+        },
+        'command': {
+            'commandId': 'id',
+            'commandName': 'name',
+            'commandTemplate': 'template'
+        }
+    };
+
+    // Определяем тип формы
+    let formType = '';
+    if (form.id.includes('switchForm')) formType = 'switch';
+    else if (form.id.includes('userForm')) formType = 'user';
+    else if (form.id.includes('commandForm')) formType = 'command';
+
+    // Преобразуем ключи
+    const mappedData = {};
+    const mapping = keyMappings[formType] || {};
+    
+    Object.keys(rawData).forEach(key => {
+        const mappedKey = mapping[key] || key;
+        mappedData[mappedKey] = rawData[key];
+    });
+
     // Специфичная логика для команд (сбор переменных)
-    if (form.id === 'commandForm') {
+    if (formType === 'command') {
         const variables = {};
         document.querySelectorAll('#variablesContainer .input-group').forEach(group => {
             const nameInput = group.querySelector('.variable-name');
@@ -42,11 +69,12 @@ function collectFormData(form) {
                 variables[nameInput.value] = valueInput.value;
             }
         });
-        formData.variables = Object.keys(variables).length ? variables : null;
+        mappedData.variables = Object.keys(variables).length ? variables : null;
     }
 
-    console.log('Собранные данные формы:', formData);
-    return formData;
+    console.log('Исходные данные:', rawData);
+    console.log('Преобразованные данные:', mappedData);
+    return mappedData;
 }
 
 // Инициализация при загрузке DOM
