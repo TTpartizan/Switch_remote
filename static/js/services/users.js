@@ -25,6 +25,47 @@ export async function loadUsers() {
             `;
             tbody.innerHTML += row;
         });
+
+        // Навешиваем обработчики редактирования
+        tbody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-user')) {
+                const row = e.target.closest('tr');
+                const userId = row.dataset.id;
+                
+                const usernameInput = document.getElementById('usernameInput');
+                const isAdminCheck = document.getElementById('isAdminCheck');
+                const userIdEdit = document.getElementById('userIdEdit');
+
+                if (usernameInput && isAdminCheck && userIdEdit) {
+                    userIdEdit.value = userId;
+                    usernameInput.value = row.querySelector('td:nth-child(2)').textContent;
+                    isAdminCheck.checked = row.querySelector('td:nth-child(3)').textContent === 'Администратор';
+                    
+                    new bootstrap.Modal(document.getElementById('userEditModal')).show();
+                } else {
+                    console.error('Не найдены элементы формы редактирования пользователя');
+                }
+            }
+        });
+
+        // Навешиваем обработчики удаления
+        tbody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-user')) {
+                const row = e.target.closest('tr');
+                const userId = row.dataset.id;
+                
+                if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+                    try {
+                        await fetchWithAuth(`/admin/users/${userId}`, { method: 'DELETE' });
+                        alert('Пользователь успешно удален');
+                        loadUsers();
+                    } catch (error) {
+                        console.error('Ошибка удаления пользователя:', error);
+                        alert(`Ошибка: ${error.message}`);
+                    }
+                }
+            }
+        });
     } catch (error) {
         console.error('Ошибка загрузки пользователей:', error);
         alert(error.message);
@@ -32,18 +73,15 @@ export async function loadUsers() {
 }
 
 export async function createUser(userData) {
-    console.log('Попытка создания пользователя:', userData);
     try {
-        const response = await fetchWithAuth('/admin/users/', {
+        await fetchWithAuth('/admin/users/', {
             method: 'POST',
             body: JSON.stringify(userData)
         });
-        console.log('Ответ при создании:', response);
         alert('Пользователь успешно создан');
         loadUsers();
     } catch (error) {
-        console.error('Полная ошибка создания пользователя:', error);
-        console.error('Тело ошибки:', error.message);
+        console.error('Ошибка создания пользователя:', error);
         alert(`Ошибка: ${error.message}`);
     }
 }
