@@ -1,12 +1,38 @@
-import { loadUsers, createUser, updateUser } from './services/user_service.js';
-import { loadSwitches, createSwitch, updateSwitch } from './services/switch_service.js';
-import { loadCommands, createCommand, updateCommand } from './services/command_service.js';
+import { loadUsers } from './services/user_service.js';
+import { loadSwitches } from './services/switch_service.js';
+import { loadCommands } from './services/command_service.js';
 import { getToken } from './utils/auth.js';
 
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, навешиваем обработчики');
     getToken(); // Проверка токена
+
+    // Принудительная загрузка данных при открытии модальных окон
+    const userModal = document.getElementById('userModal');
+    const switchModal = document.getElementById('switchModal');
+    const commandModal = document.getElementById('commandModal');
+
+    if (userModal) {
+        userModal.addEventListener('show.bs.modal', () => {
+            console.log('Открытие модального окна пользователей');
+            loadUsers();
+        });
+    }
+
+    if (switchModal) {
+        switchModal.addEventListener('show.bs.modal', () => {
+            console.log('Открытие модального окна коммутаторов');
+            loadSwitches();
+        });
+    }
+
+    if (commandModal) {
+        commandModal.addEventListener('show.bs.modal', () => {
+            console.log('Открытие модального окна команд');
+            loadCommands();
+        });
+    }
 
     // Обработчики для кнопок добавления
     const addUserBtn = document.getElementById('addUserBtn');
@@ -119,12 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Загрузка данных при открытии модальных окон
-    const userModal = document.getElementById('userModal');
-    const switchModal = document.getElementById('switchModal');
-    const commandModal = document.getElementById('commandModal');
-
-    if (userModal) userModal.addEventListener('show.bs.modal', loadUsers);
-    if (switchModal) switchModal.addEventListener('show.bs.modal', loadSwitches);
-    if (commandModal) commandModal.addEventListener('show.bs.modal', loadCommands);
+    // Принудительная первичная загрузка данных
+    console.log('Принудительная первичная загрузка данных');
+    loadUsers();
+    loadSwitches();
+    loadCommands();
 });
