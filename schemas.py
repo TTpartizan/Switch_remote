@@ -1,9 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class UserCreate(BaseModel):
+    id: Optional[int] = None
     username: str
-    password: str
+    password: Optional[str] = None
     is_admin: bool = False
 
 class UserUpdate(BaseModel):
@@ -12,9 +13,10 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
 
 class SwitchCreate(BaseModel):
+    id: Optional[int] = None
     ip_address: str
-    hostname: str
-    brand: str = "SNR"
+    hostname: Optional[str] = None
+    brand: str = "cisco_ios"
 
 class SwitchUpdate(BaseModel):
     ip_address: Optional[str] = None
@@ -22,8 +24,9 @@ class SwitchUpdate(BaseModel):
     brand: Optional[str] = None
 
 class CommandCreate(BaseModel):
-    name: str
-    template: str
+    id: Optional[int] = None
+    name: str = Field(..., description="Название команды")
+    template: str = Field(..., description="Шаблон команды")
 
 class CommandUpdate(BaseModel):
     name: Optional[str] = None
