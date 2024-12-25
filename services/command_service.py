@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 import database
 import schemas
+import json
 
 class CommandService:
     def __init__(self, db: Session):
@@ -15,24 +16,30 @@ class CommandService:
                 detail="Команда с таким именем уже существует"
             )
         
-        db_command = database.Command(**command.dict())
+        db_command = database.Command(
+            name=command.name, 
+            template=command.template,
+            variables=json.dumps(command.variables) if command.variables else None
+        )
         self.db.add(db_command)
         self.db.commit()
         self.db.refresh(db_command)
         return {
             "id": db_command.id,
             "name": db_command.name,
-            "template": db_command.template
+            "template": db_command.template,
+            "variables": command.variables
         }
 
     def list_commands(self):
         commands = self.db.query(database.Command).all()
         return [
             {
-                "id": command.id,
-                "name": command.name,
-                "template": command.template
-            } for command in commands
+                "id": cmd.id,
+                "name": cmd.name,
+                "template": cmd.template,
+                "variables": json.loads(cmd.variables) if cmd.variables else None
+            } for cmd in commands
         ]
 
     def update_command(self, command_id: int, command: schemas.CommandUpdate):
@@ -43,15 +50,20 @@ class CommandService:
                 detail="Команда не найдена"
             )
         
-        for key, value in command.dict(exclude_unset=True).items():
-            setattr(db_command, key, value)
+        if command.name:
+            db_command.name = command.name
+        if command.template:
+            db_command.template = command.template
+        if command.variables is not None:
+            db_command.variables = json.dumps(command.variables)
         
         self.db.commit()
         self.db.refresh(db_command)
         return {
             "id": db_command.id,
             "name": db_command.name,
-            "template": db_command.template
+            "template": db_command.template,
+            "variables": command.variables
         }
 
     def delete_command(self, command_id: int):

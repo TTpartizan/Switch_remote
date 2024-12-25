@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 
 class UserCreate(BaseModel):
     id: Optional[int] = None
@@ -27,10 +27,12 @@ class CommandCreate(BaseModel):
     id: Optional[int] = None
     name: str = Field(..., description="Название команды")
     template: str = Field(..., description="Шаблон команды")
+    variables: Optional[Dict[str, str]] = None
 
 class CommandUpdate(BaseModel):
     name: Optional[str] = None
     template: Optional[str] = None
+    variables: Optional[Dict[str, str]] = None
 
 class Token(BaseModel):
     access_token: str
