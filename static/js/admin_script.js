@@ -3,6 +3,92 @@ import { loadSwitches, createSwitch, updateSwitch } from './admin/switches.js';
 import { loadCommands, createCommand, updateCommand } from './admin/commands.js';
 import { getToken } from './utils/auth.js';
 
+// Функция для безопасного получения элемента
+function safeGetElement(selector) {
+    const element = document.querySelector(selector);
+    if (!element) {
+        console.warn(`Элемент с селектором ${selector} не найден`);
+    }
+    return element;
+}
+
+// Функция для создания модального окна
+function createModal(modalSelector, formSelector, loadFunction, createFunction, updateFunction) {
+    const modal = safeGetElement(modalSelector);
+    const form = safeGetElement(formSelector);
+
+    if (!modal || !form) return;
+
+    const addButton = modal.querySelector('[id$="Btn"]');
+    if (addButton) {
+        addButton.addEventListener('click', () => {
+            // Сбрасываем все поля ввода внутри формы
+            form.querySelectorAll('input').forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else if (input.type === 'hidden') {
+                    input.value = '';
+                } else {
+                    input.value = input.dataset.default || '';
+                }
+            });
+
+            // Специфичные действия для команд (очистка переменных)
+            if (modalSelector === '#commandModal') {
+                const variablesContainer = safeGetElement('#variablesContainer');
+                if (variablesContainer) variablesContainer.innerHTML = '';
+            }
+
+            new bootstrap.Modal(modal).show();
+        });
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const idInput = form.querySelector('[id$="IdEdit"]');
+        const id = idInput ? idInput.value : null;
+
+        // Собираем данные из формы
+        const formData = {};
+        form.querySelectorAll('input:not([type="submit"])').forEach(input => {
+            if (input.type === 'checkbox') {
+                formData[input.id.replace('Input', '')] = input.checked;
+            } else if (input.value) {
+                formData[input.id.replace('Input', '')] = input.value;
+            }
+        });
+
+        // Специфичные действия для команд (сбор переменных)
+        if (modalSelector === '#commandModal') {
+            const variables = {};
+            document.querySelectorAll('#variablesContainer .input-group').forEach(group => {
+                const nameInput = group.querySelector('.variable-name');
+                const valueInput = group.querySelector('.variable-value');
+                
+                if (nameInput.value && valueInput.value) {
+                    variables[nameInput.value] = valueInput.value;
+                }
+            });
+            formData.variables = Object.keys(variables).length ? variables : null;
+        }
+
+        try {
+            if (id) {
+                await updateFunction(id, formData);
+            } else {
+                await createFunction(formData);
+            }
+
+            bootstrap.Modal.getInstance(modal).hide();
+            loadFunction();
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert(`Ошибка: ${error.message}`);
+        }
+    });
+}
+
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, навешиваем обработчики');
@@ -10,67 +96,19 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         getToken(); // Проверка токена
 
-        // Принудительная первичная загрузка данных
-        console.log('Принудительная первичная загрузка данных');
-        
-        // Проверяем наличие модальных окон
-        const userModal = document.getElementById('userModal');
-        const switchModal = document.getElementById('switchModal');
-        const commandModal = document.getElementById('commandModal');
-
-        console.log('Статус модальных окон:', {
-            userModal: !!userModal,
-            switchModal: !!switchModal,
-            commandModal: !!commandModal
-        });
-
-        // Загрузка данных независимо от модальных окон
+        // Загрузка данных
         loadUsers();
         loadSwitches();
         loadCommands();
 
-        // Обработчики для кнопок добавления
-        const addUserBtn = document.getElementById('addUserBtn');
-        const addSwitchBtn = document.getElementById('addSwitchBtn');
-        const addCommandBtn = document.getElementById('addCommandBtn');
-
-        if (addUserBtn) {
-            addUserBtn.addEventListener('click', () => {
-                document.getElementById('userIdEdit').value = '';
-                document.getElementById('usernameInput').value = '';
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('isAdminCheck').checked = false;
-                new bootstrap.Modal(document.getElementById('userEditModal')).show();
-            });
-        }
-
-        if (addSwitchBtn) {
-            addSwitchBtn.addEventListener('click', () => {
-                document.getElementById('switchIdEdit').value = '';
-                document.getElementById('switchIpInput').value = '';
-                document.getElementById('switchHostnameInput').value = '';
-                document.getElementById('switchBrandInput').value = 'cisco_ios';
-                new bootstrap.Modal(document.getElementById('switchEditModal')).show();
-            });
-        }
-
-        if (addCommandBtn) {
-            addCommandBtn.addEventListener('click', () => {
-                document.getElementById('commandIdEdit').value = '';
-                document.getElementById('commandNameInput').value = '';
-                document.getElementById('commandTemplateInput').value = '';
-                
-                // Очистка существующих переменных
-                const variablesContainer = document.getElementById('variablesContainer');
-                variablesContainer.innerHTML = '';
-
-                new bootstrap.Modal(document.getElementById('commandEditModal')).show();
-            });
-        }
+        // Создание модальных окон
+        createModal('#userModal', '#userForm', loadUsers, createUser, updateUser);
+        createModal('#switchModal', '#switchForm', loadSwitches, createSwitch, updateSwitch);
+        createModal('#commandModal', '#commandForm', loadCommands, createCommand, updateCommand);
 
         // Обработчик добавления переменной для команд
-        const addVariableBtn = document.getElementById('addVariableBtn');
-        const variablesContainer = document.getElementById('variablesContainer');
+        const addVariableBtn = safeGetElement('#addVariableBtn');
+        const variablesContainer = safeGetElement('#variablesContainer');
 
         if (addVariableBtn && variablesContainer) {
             addVariableBtn.addEventListener('click', () => {
@@ -87,92 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 variableRow.querySelector('.remove-variable').addEventListener('click', () => {
                     variablesContainer.removeChild(variableRow);
                 });
-            });
-        }
-
-        // Обработчики форм
-        const userForm = document.getElementById('userForm');
-        const switchForm = document.getElementById('switchForm');
-        const commandForm = document.getElementById('commandForm');
-
-        if (userForm) {
-            userForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const userId = document.getElementById('userIdEdit').value;
-                const username = document.getElementById('usernameInput').value;
-                const password = document.getElementById('passwordInput').value;
-                const isAdmin = document.getElementById('isAdminCheck').checked;
-
-                const userData = { username, password, is_admin: isAdmin };
-                
-                if (userId) {
-                    await updateUser(userId, userData);
-                } else {
-                    await createUser(userData);
-                }
-
-                bootstrap.Modal.getInstance(document.getElementById('userEditModal')).hide();
-            });
-        }
-
-        if (switchForm) {
-            switchForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const switchId = document.getElementById('switchIdEdit').value;
-                const ipAddress = document.getElementById('switchIpInput').value;
-                const hostname = document.getElementById('switchHostnameInput').value;
-                const brand = document.getElementById('switchBrandInput').value;
-
-                const switchData = { 
-                    ip_address: ipAddress, 
-                    hostname: hostname, 
-                    brand: brand 
-                };
-                
-                if (switchId) {
-                    await updateSwitch(switchId, switchData);
-                } else {
-                    await createSwitch(switchData);
-                }
-
-                bootstrap.Modal.getInstance(document.getElementById('switchEditModal')).hide();
-            });
-        }
-
-        if (commandForm) {
-            commandForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const commandId = document.getElementById('commandIdEdit').value;
-                const name = document.getElementById('commandNameInput').value;
-                const template = document.getElementById('commandTemplateInput').value;
-
-                // Сбор переменных
-                const variables = {};
-                document.querySelectorAll('#variablesContainer .input-group').forEach(group => {
-                    const nameInput = group.querySelector('.variable-name');
-                    const valueInput = group.querySelector('.variable-value');
-                    
-                    if (nameInput.value && valueInput.value) {
-                        variables[nameInput.value] = valueInput.value;
-                    }
-                });
-
-                const commandData = { 
-                    name, 
-                    template, 
-                    variables: Object.keys(variables).length ? variables : null 
-                };
-                
-                if (commandId) {
-                    await updateCommand(commandId, commandData);
-                } else {
-                    await createCommand(commandData);
-                }
-
-                bootstrap.Modal.getInstance(document.getElementById('commandEditModal')).hide();
             });
         }
 
