@@ -15,6 +15,7 @@ export async function fetchWithAuth(url, options = {}) {
     console.log('Выполнение запроса:', {
         url: url,
         method: options.method || 'GET',
+        body: options.body,
         headers: options.headers
     });
 

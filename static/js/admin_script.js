@@ -12,6 +12,43 @@ function safeGetElement(selector, context = document) {
     return element;
 }
 
+// Функция для сбора данных из формы
+function collectFormData(form) {
+    const formData = {};
+    
+    // Собираем все input элементы
+    form.querySelectorAll('input').forEach(input => {
+        if (input.type === 'hidden') {
+            formData[input.id.replace('Edit', '')] = input.value;
+        } else if (input.type === 'text') {
+            formData[input.id.replace('Input', '')] = input.value;
+        } else if (input.type === 'password') {
+            if (input.value) {
+                formData[input.id.replace('Input', '')] = input.value;
+            }
+        } else if (input.type === 'checkbox') {
+            formData[input.id.replace('Check', '')] = input.checked;
+        }
+    });
+
+    // Специфичная логика для команд (сбор переменных)
+    if (form.id === 'commandForm') {
+        const variables = {};
+        document.querySelectorAll('#variablesContainer .input-group').forEach(group => {
+            const nameInput = group.querySelector('.variable-name');
+            const valueInput = group.querySelector('.variable-value');
+            
+            if (nameInput.value && valueInput.value) {
+                variables[nameInput.value] = valueInput.value;
+            }
+        });
+        formData.variables = Object.keys(variables).length ? variables : null;
+    }
+
+    console.log('Собранные данные формы:', formData);
+    return formData;
+}
+
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, навешиваем обработчики');
@@ -24,104 +61,66 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSwitches();
         loadCommands();
 
-        // Обработчики кнопок добавления
-        const addUserBtn = document.getElementById('addUserBtn');
-        const addSwitchBtn = document.getElementById('addSwitchBtn');
-        const addCommandBtn = document.getElementById('addCommandBtn');
+        // Обработчики форм
+        const forms = [
+            { 
+                selector: '#userForm', 
+                createFunc: createUser, 
+                updateFunc: updateUser,
+                loadFunc: loadUsers 
+            },
+            { 
+                selector: '#switchForm', 
+                createFunc: createSwitch, 
+                updateFunc: updateSwitch,
+                loadFunc: loadSwitches 
+            },
+            { 
+                selector: '#commandForm', 
+                createFunc: createCommand, 
+                updateFunc: updateCommand,
+                loadFunc: loadCommands 
+            }
+        ];
 
-        // Пользователи
-        if (addUserBtn) {
-            addUserBtn.addEventListener('click', () => {
-                console.log('Нажата кнопка добавления пользователя');
-                const userIdEdit = document.getElementById('userIdEdit');
-                const usernameInput = document.getElementById('usernameInput');
-                const passwordInput = document.getElementById('passwordInput');
-                const isAdminCheck = document.getElementById('isAdminCheck');
+        forms.forEach(formConfig => {
+            const form = document.querySelector(formConfig.selector);
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log(`Отправка формы: ${formConfig.selector}`);
 
-                if (userIdEdit && usernameInput && passwordInput && isAdminCheck) {
-                    userIdEdit.value = '';
-                    usernameInput.value = '';
-                    passwordInput.value = '';
-                    isAdminCheck.checked = false;
-                    
-                    new bootstrap.Modal(document.getElementById('userEditModal')).show();
-                } else {
-                    console.error('Не найдены элементы формы пользователя');
-                }
-            });
-        } else {
-            console.error('Кнопка добавления пользователя не найдена');
-        }
+                    try {
+                        const formData = collectFormData(form);
+                        const idInput = form.querySelector('[id$="IdEdit"]');
+                        const id = idInput ? idInput.value : null;
 
-        // Коммутаторы
-        if (addSwitchBtn) {
-            addSwitchBtn.addEventListener('click', () => {
-                console.log('Нажата кнопка добавления коммутатора');
-                const switchIdEdit = document.getElementById('switchIdEdit');
-                const switchIpInput = document.getElementById('switchIpInput');
-                const switchHostnameInput = document.getElementById('switchHostnameInput');
-                const switchBrandInput = document.getElementById('switchBrandInput');
+                        console.log('ID:', id);
+                        console.log('Данные:', formData);
 
-                if (switchIdEdit && switchIpInput && switchHostnameInput && switchBrandInput) {
-                    switchIdEdit.value = '';
-                    switchIpInput.value = '';
-                    switchHostnameInput.value = '';
-                    switchBrandInput.value = 'cisco_ios';
-                    
-                    new bootstrap.Modal(document.getElementById('switchEditModal')).show();
-                } else {
-                    console.error('Не найдены элементы формы коммутатора');
-                }
-            });
-        } else {
-            console.error('Кнопка добавления коммутатора не найдена');
-        }
+                        if (id) {
+                            await formConfig.updateFunc(id, formData);
+                        } else {
+                            await formConfig.createFunc(formData);
+                        }
 
-        // Команды
-        if (addCommandBtn) {
-            addCommandBtn.addEventListener('click', () => {
-                console.log('Нажата кнопка добавления команды');
-                const commandIdEdit = document.getElementById('commandIdEdit');
-                const commandNameInput = document.getElementById('commandNameInput');
-                const commandTemplateInput = document.getElementById('commandTemplateInput');
-                const variablesContainer = document.getElementById('variablesContainer');
+                        // Закрываем модальное окно
+                        const modalElement = form.closest('.modal');
+                        if (modalElement) {
+                            bootstrap.Modal.getInstance(modalElement).hide();
+                        }
 
-                if (commandIdEdit && commandNameInput && commandTemplateInput && variablesContainer) {
-                    commandIdEdit.value = '';
-                    commandNameInput.value = '';
-                    commandTemplateInput.value = '';
-                    variablesContainer.innerHTML = '';
-                    
-                    new bootstrap.Modal(document.getElementById('commandEditModal')).show();
-                } else {
-                    console.error('Не найдены элементы формы команды');
-                }
-            });
-        } else {
-            console.error('Кнопка добавления команды не найдена');
-        }
-
-        // Обработчик добавления переменной для команд
-        const addVariableBtn = safeGetElement('#addVariableBtn');
-        const variablesContainer = safeGetElement('#variablesContainer');
-
-        if (addVariableBtn && variablesContainer) {
-            addVariableBtn.addEventListener('click', () => {
-                const variableRow = document.createElement('div');
-                variableRow.classList.add('input-group', 'mb-2');
-                variableRow.innerHTML = `
-                    <input type="text" class="form-control variable-name" placeholder="Имя переменной">
-                    <input type="text" class="form-control variable-value" placeholder="Значение">
-                    <button type="button" class="btn btn-danger remove-variable">Удалить</button>
-                `;
-                variablesContainer.appendChild(variableRow);
-
-                // Обработчик удаления переменной
-                variableRow.querySelector('.remove-variable').addEventListener('click', () => {
-                    variablesContainer.removeChild(variableRow);
+                        // Перезагружаем данные
+                        formConfig.loadFunc();
+                    } catch (error) {
+                        console.error('Ошибка при отправке формы:', error);
+                        alert(`Ошибка: ${error.message}`);
+                    }
                 });
-            });
-        }
+            } else {
+                console.error(`Форма ${formConfig.selector} не найдена`);
+            }
+        });
 
     } catch (error) {
         console.error('Критическая ошибка инициализации:', error);
