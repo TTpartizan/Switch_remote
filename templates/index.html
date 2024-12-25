@@ -4,26 +4,27 @@
     <meta charset="UTF-8">
     <title>Управление сетевыми коммутаторами</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">Управление коммутаторами</a>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">
                     {{ username }} ({{ 'Администратор' if is_admin else 'Пользователь' }})
                 </span>
-                <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+                <a href="/logout" class="btn btn-outline-light">Выйти</a>
             </div>
         </div>
     </nav>
 
     <div class="container mt-5">
-        <h1>Выполнение команд на коммутаторах</h1>
+        <h1 class="mb-4">Выполнение команд на коммутаторах</h1>
         
         <form id="commandForm">
             <div class="mb-3">
-                <label>Выберите коммутатор</label>
+                <label class="form-label">Выберите коммутатор</label>
                 <select id="switchSelect" class="form-control">
                     {% for switch in switches %}
                     <option value="{{ switch.ip_address }}">{{ switch.ip_address }} ({{ switch.hostname }})</option>
@@ -31,7 +32,7 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label>Выберите команду</label>
+                <label class="form-label">Выберите команду</label>
                 <select id="commandSelect" class="form-control">
                     {% for command in commands %}
                     <option value="{{ command.template }}">{{ command.name }}</option>
@@ -39,7 +40,7 @@
                 </select>
             </div>
             <div id="portSection" class="mb-3" style="display:none;">
-                <label>Номер порта</label>
+                <label class="form-label">Номер порта</label>
                 <input type="text" id="portInput" class="form-control">
             </div>
             <button type="submit" class="btn btn-primary">Выполнить команду</button>
