@@ -2,8 +2,17 @@ import { fetchWithAuth } from '../utils/auth.js';
 
 export async function loadCommands() {
     try {
+        console.log('Начало загрузки команд');
         const commands = await fetchWithAuth('/admin/commands/');
+        
+        console.log('Количество команд:', commands.length);
+        
         const tbody = document.getElementById('commandsTableBody');
+        if (!tbody) {
+            console.error('Элемент commandsTableBody не найден');
+            return;
+        }
+        
         tbody.innerHTML = '';
         commands.forEach(cmd => {
             const row = `
@@ -20,34 +29,10 @@ export async function loadCommands() {
             tbody.innerHTML += row;
         });
 
-        // Навешиваем обработчики после загрузки
-        document.querySelectorAll('.edit-command').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const commandId = e.target.dataset.id;
-                const cmd = commands.find(c => c.id === parseInt(commandId));
-                
-                if (cmd) {
-                    document.getElementById('commandIdEdit').value = cmd.id;
-                    document.getElementById('commandNameInput').value = cmd.name;
-                    document.getElementById('commandTemplateInput').value = cmd.template;
-                    
-                    new bootstrap.Modal(document.getElementById('commandEditModal')).show();
-                }
-            });
-        });
-
-        // Навешиваем обработчики удаления
-        document.querySelectorAll('.delete-command').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const commandId = e.target.dataset.id;
-                if (confirm('Вы уверены, что хотите удалить эту команду?')) {
-                    deleteCommand(commandId);
-                }
-            });
-        });
+        console.log('Команды загружены и отображены');
     } catch (error) {
-        console.error('Ошибка загрузки команд:', error);
-        alert(error.message);
+        console.error('Критическая ошибка загрузки команд:', error);
+        alert(`Ошибка загрузки команд: ${error.message}`);
     }
 }
 

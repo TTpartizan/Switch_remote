@@ -2,16 +2,22 @@
 export function getToken() {
     const token = localStorage.getItem('token');
     if (!token) {
+        console.error('Токен не найден, перенаправление на страницу входа');
         window.location.href = '/login';
     }
     return token;
 }
 
-// Функция для выполнения запросов с авторизацией
+// Функция для выполнения запросов с авторизацией с расширенной отладкой
 export async function fetchWithAuth(url, options = {}) {
-    console.log('Запрос:', url, options);
     const token = getToken();
     
+    console.log('Выполнение запроса:', {
+        url: url,
+        method: options.method || 'GET',
+        headers: options.headers
+    });
+
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -24,17 +30,19 @@ export async function fetchWithAuth(url, options = {}) {
             headers
         });
 
-        console.log('Ответ:', response);
+        console.log('Статус ответа:', response.status, response.statusText);
 
         if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Ошибка:', errorData);
-            throw new Error(errorData || 'Произошла ошибка');
+            const errorText = await response.text();
+            console.error('Ошибка запроса:', errorText);
+            throw new Error(errorText || 'Произошла ошибка при запросе');
         }
 
-        return response.json();
+        const data = await response.json();
+        console.log('Полученные данные:', data);
+        return data;
     } catch (error) {
-        console.error('Ошибка запроса:', error);
+        console.error('Критическая ошибка:', error);
         throw error;
     }
 }

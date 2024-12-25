@@ -2,8 +2,17 @@ import { fetchWithAuth } from '../utils/auth.js';
 
 export async function loadUsers() {
     try {
+        console.log('Начало загрузки пользователей');
         const users = await fetchWithAuth('/admin/users/');
+        
+        console.log('Количество пользователей:', users.length);
+        
         const tbody = document.getElementById('usersTableBody');
+        if (!tbody) {
+            console.error('Элемент usersTableBody не найден');
+            return;
+        }
+        
         tbody.innerHTML = '';
         users.forEach(user => {
             const row = `
@@ -20,35 +29,10 @@ export async function loadUsers() {
             tbody.innerHTML += row;
         });
 
-        // Навешиваем обработчики после загрузки
-        document.querySelectorAll('.edit-user').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const userId = e.target.dataset.id;
-                const user = users.find(u => u.id === parseInt(userId));
-                
-                if (user) {
-                    document.getElementById('userIdEdit').value = user.id;
-                    document.getElementById('usernameInput').value = user.username;
-                    document.getElementById('passwordInput').value = ''; // Очищаем пароль
-                    document.getElementById('isAdminCheck').checked = user.is_admin;
-                    
-                    new bootstrap.Modal(document.getElementById('userEditModal')).show();
-                }
-            });
-        });
-
-        // Навешиваем обработчики удаления
-        document.querySelectorAll('.delete-user').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const userId = e.target.dataset.id;
-                if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
-                    deleteUser(userId);
-                }
-            });
-        });
+        console.log('Пользователи загружены и отображены');
     } catch (error) {
-        console.error('Ошибка загрузки пользователей:', error);
-        alert(error.message);
+        console.error('Критическая ошибка загрузки пользователей:', error);
+        alert(`Ошибка загрузки пользователей: ${error.message}`);
     }
 }
 

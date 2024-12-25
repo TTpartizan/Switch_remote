@@ -2,8 +2,17 @@ import { fetchWithAuth } from '../utils/auth.js';
 
 export async function loadSwitches() {
     try {
+        console.log('Начало загрузки коммутаторов');
         const switches = await fetchWithAuth('/admin/switches/');
+        
+        console.log('Количество коммутаторов:', switches.length);
+        
         const tbody = document.getElementById('switchesTableBody');
+        if (!tbody) {
+            console.error('Элемент switchesTableBody не найден');
+            return;
+        }
+        
         tbody.innerHTML = '';
         switches.forEach(sw => {
             const row = `
@@ -21,35 +30,10 @@ export async function loadSwitches() {
             tbody.innerHTML += row;
         });
 
-        // Навешиваем обработчики после загрузки
-        document.querySelectorAll('.edit-switch').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const switchId = e.target.dataset.id;
-                const sw = switches.find(s => s.id === parseInt(switchId));
-                
-                if (sw) {
-                    document.getElementById('switchIdEdit').value = sw.id;
-                    document.getElementById('switchIpInput').value = sw.ip_address;
-                    document.getElementById('switchHostnameInput').value = sw.hostname;
-                    document.getElementById('switchBrandInput').value = sw.brand;
-                    
-                    new bootstrap.Modal(document.getElementById('switchEditModal')).show();
-                }
-            });
-        });
-
-        // Навешиваем обработчики удаления
-        document.querySelectorAll('.delete-switch').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const switchId = e.target.dataset.id;
-                if (confirm('Вы уверены, что хотите удалить этот коммутатор?')) {
-                    deleteSwitch(switchId);
-                }
-            });
-        });
+        console.log('Коммутаторы загружены и отображены');
     } catch (error) {
-        console.error('Ошибка загрузки коммутаторов:', error);
-        alert(error.message);
+        console.error('Критическая ошибка загрузки коммутаторов:', error);
+        alert(`Ошибка загрузки коммутаторов: ${error.message}`);
     }
 }
 
