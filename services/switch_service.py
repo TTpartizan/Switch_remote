@@ -19,10 +19,23 @@ class SwitchService:
         self.db.add(db_switch)
         self.db.commit()
         self.db.refresh(db_switch)
-        return switch
+        return {
+            "id": db_switch.id,
+            "ip_address": db_switch.ip_address,
+            "hostname": db_switch.hostname,
+            "brand": db_switch.brand
+        }
 
     def list_switches(self):
-        return self.db.query(database.Switch).all()
+        switches = self.db.query(database.Switch).all()
+        return [
+            {
+                "id": switch.id,
+                "ip_address": switch.ip_address,
+                "hostname": switch.hostname,
+                "brand": switch.brand
+            } for switch in switches
+        ]
 
     def update_switch(self, switch_id: int, switch: schemas.SwitchUpdate):
         db_switch = self.db.query(database.Switch).filter(database.Switch.id == switch_id).first()
@@ -37,7 +50,12 @@ class SwitchService:
         
         self.db.commit()
         self.db.refresh(db_switch)
-        return switch
+        return {
+            "id": db_switch.id,
+            "ip_address": db_switch.ip_address,
+            "hostname": db_switch.hostname,
+            "brand": db_switch.brand
+        }
 
     def delete_switch(self, switch_id: int):
         db_switch = self.db.query(database.Switch).filter(database.Switch.id == switch_id).first()

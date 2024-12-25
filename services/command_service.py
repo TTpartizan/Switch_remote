@@ -19,10 +19,21 @@ class CommandService:
         self.db.add(db_command)
         self.db.commit()
         self.db.refresh(db_command)
-        return command
+        return {
+            "id": db_command.id,
+            "name": db_command.name,
+            "template": db_command.template
+        }
 
     def list_commands(self):
-        return self.db.query(database.Command).all()
+        commands = self.db.query(database.Command).all()
+        return [
+            {
+                "id": command.id,
+                "name": command.name,
+                "template": command.template
+            } for command in commands
+        ]
 
     def update_command(self, command_id: int, command: schemas.CommandUpdate):
         db_command = self.db.query(database.Command).filter(database.Command.id == command_id).first()
@@ -37,7 +48,11 @@ class CommandService:
         
         self.db.commit()
         self.db.refresh(db_command)
-        return command
+        return {
+            "id": db_command.id,
+            "name": db_command.name,
+            "template": db_command.template
+        }
 
     def delete_command(self, command_id: int):
         db_command = self.db.query(database.Command).filter(database.Command.id == command_id).first()
