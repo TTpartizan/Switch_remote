@@ -4,8 +4,8 @@ import { loadCommands, createCommand, updateCommand } from './admin/commands.js'
 import { getToken } from './utils/auth.js';
 
 // Функция для безопасного получения элемента
-function safeGetElement(selector) {
-    const element = document.querySelector(selector);
+function safeGetElement(selector, context = document) {
+    const element = context.querySelector(selector);
     if (!element) {
         console.warn(`Элемент с селектором ${selector} не найден`);
     }
@@ -13,40 +13,40 @@ function safeGetElement(selector) {
 }
 
 // Функция для создания модального окна
-function createModal(modalSelector, formSelector, loadFunction, createFunction, updateFunction) {
+function createModal(modalSelector, createFunction, updateFunction, loadFunction) {
     const modal = safeGetElement(modalSelector);
-    const form = safeGetElement(formSelector);
+    if (!modal) return;
 
-    if (!modal || !form) return;
+    const addButton = safeGetElement('[id$="Btn"]', modal);
+    const form = safeGetElement('form', modal);
 
-    const addButton = modal.querySelector('[id$="Btn"]');
-    if (addButton) {
-        addButton.addEventListener('click', () => {
-            // Сбрасываем все поля ввода внутри формы
-            form.querySelectorAll('input').forEach(input => {
-                if (input.type === 'checkbox') {
-                    input.checked = false;
-                } else if (input.type === 'hidden') {
-                    input.value = '';
-                } else {
-                    input.value = input.dataset.default || '';
-                }
-            });
+    if (!addButton || !form) return;
 
-            // Специфичные действия для команд (очистка переменных)
-            if (modalSelector === '#commandModal') {
-                const variablesContainer = safeGetElement('#variablesContainer');
-                if (variablesContainer) variablesContainer.innerHTML = '';
+    addButton.addEventListener('click', () => {
+        // Сбрасываем все поля ввода внутри формы
+        form.querySelectorAll('input').forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else if (input.type === 'hidden') {
+                input.value = '';
+            } else {
+                input.value = input.dataset.default || '';
             }
-
-            new bootstrap.Modal(modal).show();
         });
-    }
+
+        // Специфичные действия для команд (очистка переменных)
+        if (modalSelector === '#commandModal') {
+            const variablesContainer = safeGetElement('#variablesContainer');
+            if (variablesContainer) variablesContainer.innerHTML = '';
+        }
+
+        new bootstrap.Modal(modal).show();
+    });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const idInput = form.querySelector('[id$="IdEdit"]');
+        const idInput = safeGetElement('[id$="IdEdit"]', form);
         const id = idInput ? idInput.value : null;
 
         // Собираем данные из формы
@@ -101,10 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSwitches();
         loadCommands();
 
-        // Создание модальных окон
-        createModal('#userModal', '#userForm', loadUsers, createUser, updateUser);
-        createModal('#switchModal', '#switchForm', loadSwitches, createSwitch, updateSwitch);
-        createModal('#commandModal', '#commandForm', loadCommands, createCommand, updateCommand);
+        // Создание модальных окон с обновленной логикой
+        createModal('#userEditModal', createUser, updateUser, loadUsers);
+        createModal('#switchEditModal', createSwitch, updateSwitch, loadSwitches);
+        createModal('#commandEditModal', createCommand, updateCommand, loadCommands);
 
         // Обработчик добавления переменной для команд
         const addVariableBtn = safeGetElement('#addVariableBtn');

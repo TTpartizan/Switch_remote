@@ -13,13 +13,13 @@ export async function loadUsers() {
         tbody.innerHTML = '';
         users.forEach(user => {
             const row = `
-                <tr>
+                <tr data-id="${user.id}">
                     <td>${user.id}</td>
                     <td>${user.username}</td>
                     <td>${user.is_admin ? 'Администратор' : 'Пользователь'}</td>
                     <td>
-                        <button class="btn btn-sm btn-warning edit-user" data-id="${user.id}">Изменить</button>
-                        <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">Удалить</button>
+                        <button class="btn btn-sm btn-warning edit-user">Изменить</button>
+                        <button class="btn btn-sm btn-danger delete-user">Удалить</button>
                     </td>
                 </tr>
             `;
@@ -27,24 +27,31 @@ export async function loadUsers() {
         });
 
         // Навешиваем обработчики редактирования
-        document.querySelectorAll('.edit-user').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const userId = e.target.dataset.id;
-                const userRow = e.target.closest('tr');
+        tbody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-user')) {
+                const row = e.target.closest('tr');
+                const userId = row.dataset.id;
                 
-                document.getElementById('userIdEdit').value = userId;
-                document.getElementById('usernameInput').value = userRow.querySelector('td:nth-child(2)').textContent;
-                document.getElementById('isAdminCheck').checked = 
-                    userRow.querySelector('td:nth-child(3)').textContent === 'Администратор';
-                
-                new bootstrap.Modal(document.getElementById('userEditModal')).show();
-            });
+                const usernameInput = document.getElementById('usernameInput');
+                const isAdminCheck = document.getElementById('isAdminCheck');
+                const userIdEdit = document.getElementById('userIdEdit');
+
+                if (usernameInput && isAdminCheck && userIdEdit) {
+                    userIdEdit.value = userId;
+                    usernameInput.value = row.querySelector('td:nth-child(2)').textContent;
+                    isAdminCheck.checked = row.querySelector('td:nth-child(3)').textContent === 'Администратор';
+                    
+                    new bootstrap.Modal(document.getElementById('userEditModal')).show();
+                }
+            }
         });
 
         // Навешиваем обработчики удаления
-        document.querySelectorAll('.delete-user').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const userId = e.target.dataset.id;
+        tbody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-user')) {
+                const row = e.target.closest('tr');
+                const userId = row.dataset.id;
+                
                 if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
                     try {
                         await fetchWithAuth(`/admin/users/${userId}`, { method: 'DELETE' });
@@ -55,7 +62,7 @@ export async function loadUsers() {
                         alert(`Ошибка: ${error.message}`);
                     }
                 }
-            });
+            }
         });
     } catch (error) {
         console.error('Ошибка загрузки пользователей:', error);
