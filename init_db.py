@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, engine, Base
 from database import User, Switch, Command
 from security import get_password_hash
+import json
 
 def init_database():
     # Создаем все таблицы
@@ -39,32 +40,30 @@ def init_database():
             Switch(
                 ip_address="172.17.21.25", 
                 hostname="SNR-Switch-1", 
-                brand="SNR"
+                brand="cisco_ios"
             ),
             Switch(
                 ip_address="172.17.21.23", 
                 hostname="SNR-Switch-2", 
-                brand="SNR"
+                brand="cisco_ios"
             )
         ]
-        
-        # Используем db.add_all() вместо extend
-        db.add_all(switches)
+        db.extend(switches)
 
-        # Добавляем тестовые команды
+        # Добавляем тестовые команды с переменными
         commands = [
             Command(
                 name="Версия устройства", 
-                template="show ver"
+                template="show ver",
+                variables=None
             ),
             Command(
-                name="Тест виртуального кабеля (порт)", 
-                template="virtual-cable-test interface ethernet 1/0/х"
+                name="Тест виртуального кабеля", 
+                template="virtual-cable-test interface ethernet {port}",
+                variables=json.dumps({"port": "1/0/1"})
             )
         ]
-        
-        # Используем db.add_all() вместо extend
-        db.add_all(commands)
+        db.extend(commands)
 
         # Сохраняем изменения
         db.commit()
