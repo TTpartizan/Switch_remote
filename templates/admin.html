@@ -27,6 +27,165 @@
     {% include 'admin_components/edit_forms.html' %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="/static/js/admin_script.js"></script>
+    <script>
+        // Глобальные функции для работы с сервисами
+        async function getToken() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+            }
+            return token;
+        }
+
+        async function fetchWithAuth(url, options = {}) {
+            const token = await getToken();
+            
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Произошла ошибка при запросе');
+                }
+
+                return response.json();
+            } catch (error) {
+                console.error('Критическая ошибка:', error);
+                throw error;
+            }
+        }
+
+        // Пользователи
+        async function loadUsers() {
+            try {
+                const users = await fetchWithAuth('/admin/users/');
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+                users.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.is_admin ? 'Администратор' : 'Пользователь'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-user" data-id="${user.id}">Изменить</button>
+                                <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">Удалить</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                alert(error.message);
+            }
+        }
+
+        // Коммутаторы
+        async function loadSwitches() {
+            try {
+                const switches = await fetchWithAuth('/admin/switches/');
+                const tbody = document.getElementById('switchesTableBody');
+                tbody.innerHTML = '';
+                switches.forEach(sw => {
+                    const row = `
+                        <tr>
+                            <td>${sw.id}</td>
+                            <td>${sw.ip_address}</td>
+                            <td>${sw.hostname}</td>
+                            <td>${sw.brand}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-switch" data-id="${sw.id}">Изменить</button>
+                                <button class="btn btn-sm btn-danger delete-switch" data-id="${sw.id}">Удалить</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки коммутаторов:', error);
+                alert(error.message);
+            }
+        }
+
+        // Команды
+        async function loadCommands() {
+            try {
+                const commands = await fetchWithAuth('/admin/commands/');
+                const tbody = document.getElementById('commandsTableBody');
+                tbody.innerHTML = '';
+                commands.forEach(cmd => {
+                    const row = `
+                        <tr>
+                            <td>${cmd.id}</td>
+                            <td>${cmd.name}</td>
+                            <td>${cmd.template}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-command" data-id="${cmd.id}">Изменить</button>
+                                <button class="btn btn-sm btn-danger delete-command" data-id="${cmd.id}">Удалить</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки команд:', error);
+                alert(error.message);
+            }
+        }
+
+        // Инициализация при загрузке DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM загружен, навешиваем обработчики');
+            
+            // Принудительная первичная загрузка данных
+            loadUsers();
+            loadSwitches();
+            loadCommands();
+
+            // Обработчики для кнопок добавления
+            const addUserBtn = document.getElementById('addUserBtn');
+            const addSwitchBtn = document.getElementById('addSwitchBtn');
+            const addCommandBtn = document.getElementById('addCommandBtn');
+
+            if (addUserBtn) {
+                addUserBtn.addEventListener('click', () => {
+                    document.getElementById('userIdEdit').value = '';
+                    document.getElementById('usernameInput').value = '';
+                    document.getElementById('passwordInput').value = '';
+                    document.getElementById('isAdminCheck').checked = false;
+                    new bootstrap.Modal(document.getElementById('userEditModal')).show();
+                });
+            }
+
+            if (addSwitchBtn) {
+                addSwitchBtn.addEventListener('click', () => {
+                    document.getElementById('switchIdEdit').value = '';
+                    document.getElementById('switchIpInput').value = '';
+                    document.getElementById('switchHostnameInput').value = '';
+                    document.getElementById('switchBrandInput').value = 'cisco_ios';
+                    new bootstrap.Modal(document.getElementById('switchEditModal')).show();
+                });
+            }
+
+            if (addCommandBtn) {
+                addCommandBtn.addEventListener('click', () => {
+                    document.getElementById('commandIdEdit').value = '';
+                    document.getElementById('commandNameInput').value = '';
+                    document.getElementById('commandTemplateInput').value = '';
+                    new bootstrap.Modal(document.getElementById('commandEditModal')).show();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
